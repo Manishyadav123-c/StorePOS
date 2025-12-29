@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "ptXT98LLChF45bMf4RmU5hxsCZSqh419OfKcFrbQZd0=",
+  "Source": "StorePOS.API",
+  "BasePath": "_content/StorePOS.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
