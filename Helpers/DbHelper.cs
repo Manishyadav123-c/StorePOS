@@ -10,10 +10,13 @@ namespace StorePOS.API.Helpers
         {
             _config = config;
         }
-
         public SqlConnection GetConnection()
         {
-            return new SqlConnection(_config.GetConnectionString("DB"));
+            var connStr = _config.GetConnectionString("DB");
+            var con = new SqlConnection(connStr);
+            return con;
         }
+
+
     }
 }

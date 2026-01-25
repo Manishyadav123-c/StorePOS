@@ -1,22 +1,25 @@
 using Dapper;
+using Microsoft.Data.SqlClient;
 using StorePOS.API.DTOs;
 using StorePOS.API.Helpers;
 using System.Data;
 
 namespace StorePOS.API.Repositories
 {
-    public class UserRepository
+   public class UserRepository
+{
+    private readonly DbHelper _db;
+
+    public UserRepository(DbHelper db)
     {
-        private readonly DbHelper _db;
-        public UserRepository(DbHelper db)
-        {
-            _db = db;
-        }
+        _db = db;
+    }
 
         // 🔐 LOGIN
         public UserDTO Login(string userName)
         {
-            using var con = _db.GetConnection();
+            using SqlConnection con = _db.GetConnection();
+            con.Open();
 
             return con.QueryFirstOrDefault<UserDTO>(
                 "sp_User_Login",
@@ -25,12 +28,14 @@ namespace StorePOS.API.Repositories
             );
         }
 
+
         // 📋 USER LIST
-        public List<UserDTO> List()
+        public List<UserListDTO> List()
         {
             using var con = _db.GetConnection();
+            con.Open();  // OPEN CONNECTION
 
-            return con.Query<UserDTO>(
+            return con.Query<UserListDTO>(
                 "sp_User_List",
                 commandType: CommandType.StoredProcedure
             ).ToList();
@@ -40,6 +45,7 @@ namespace StorePOS.API.Repositories
         public void Save(UserSaveDTO dto)
         {
             using var con = _db.GetConnection();
+            con.Open();  // OPEN CONNECTION
 
             con.Execute(
                 "sp_User_Save",

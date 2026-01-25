@@ -43,24 +43,33 @@
 
 // INSERT INTO Users VALUES(NEWID(),'admin','admin123',1,GETDATE());
 // -- Author : Manish | Date : 29-12-2025 | Purpose : Login
-// CREATE PROC sp_User_Login @UserName NVARCHAR(50)
+// ALTER PROCEDURE [dbo].[sp_User_Login]
+//     @UserName NVARCHAR(50)
 // AS
 // BEGIN
-//  SELECT U.UserGuid,U.UserName,R.RoleName
-//  FROM Users U
-//  JOIN UserRoleMapping UR ON U.UserGuid=UR.UserGuid
-//  JOIN Roles R ON UR.RoleGuid=R.RoleGuid
-//  WHERE U.UserName=@UserName AND U.IsActive=1
-// END
-// CREATE PROC sp_GetModulesByUser @UserGuid UNIQUEIDENTIFIER
-// AS
-// BEGIN
-//  SELECT M.ModuleName FROM Modules M
-//  JOIN RoleModuleMapping RM ON M.ModuleGuid=RM.ModuleGuid
-//  JOIN UserRoleMapping UR ON RM.RoleGuid=UR.RoleGuid
-//  WHERE UR.UserGuid=@UserGuid
-// END
+//     SET NOCOUNT ON;
 
+//     /*
+//       Purpose:
+//       - Login user by username
+//       - Return UserGuid, UserName, RoleName
+//       - Handle users without role mapping safely
+//     */
+
+//     SELECT 
+//         U.UserGuid,
+//         U.UserName,
+//         ISNULL(R.RoleName, 'User') AS RoleName
+//     FROM Users U
+//     LEFT JOIN UserRoleMapping UR 
+//         ON U.UserGuid = UR.UserGuid
+//     LEFT JOIN Roles R 
+//         ON UR.RoleGuid = R.RoleGuid
+//     WHERE 
+//         U.UserName = @UserName
+//         AND U.IsActive = 1;
+// END;
+// GO
 // Search Option With this Name In Chat GPT Chat: - SQL STORED PROCEDURES
 
 // -- Author: Manish | Date: 29-Dec-2025
@@ -70,6 +79,7 @@
 //  SELECT RoleGuid,RoleName FROM Roles ORDER BY RoleName
 // END
 // 📌 Role – Insert / UpdateCREATE PROC sp_Role_Save
+//  CREATE PROC sp_Role_Save
 // @RoleGuid UNIQUEIDENTIFIER,
 // @RoleName NVARCHAR(50)
 // AS
@@ -89,21 +99,46 @@
 //  JOIN Roles R ON UR.RoleGuid=R.RoleGuid
 // END
 // 📌 User – Insert / Update
-// CREATE PROC sp_User_Save
-// @UserGuid UNIQUEIDENTIFIER=NULL,
-// @UserName NVARCHAR(50),
-// @PasswordHash NVARCHAR(200),
-// @RoleGuid UNIQUEIDENTIFIER
+// ALTER PROCEDURE [dbo].[sp_User_Save]
+//     @UserGuid UNIQUEIDENTIFIER = NULL,
+//     @UserName NVARCHAR(50),
+//     @PasswordHash NVARCHAR(200),
+//     @RoleGuid UNIQUEIDENTIFIER
 // AS
 // BEGIN
-//  IF EXISTS(SELECT 1 FROM Users WHERE UserGuid=@UserGuid)
-//   UPDATE Users SET UserName=@UserName WHERE UserGuid=@UserGuid
-//  ELSE
-//  BEGIN
-//   DECLARE @NewGuid UNIQUEIDENTIFIER=NEWID()
-//   INSERT INTO Users(UserGuid,UserName,PasswordHash)
-//   VALUES(@NewGuid,@UserName,@PasswordHash)
-//   INSERT INTO UserRoleMapping VALUES(NEWID(),@NewGuid,@RoleGuid)
-//  END
-// END
+//     SET NOCOUNT ON;
+
+//     IF NOT EXISTS (SELECT 1 FROM Roles WHERE RoleGuid = @RoleGuid)
+//     BEGIN
+//         RAISERROR ('Invalid role', 16, 1);
+//         RETURN;
+//     END
+
+//     DECLARE @FinalUserGuid UNIQUEIDENTIFIER;
+
+//     IF @UserGuid IS NOT NULL 
+//        AND EXISTS (SELECT 1 FROM Users WHERE UserGuid = @UserGuid)
+//     BEGIN
+//         UPDATE Users
+//         SET UserName = @UserName
+//         WHERE UserGuid = @UserGuid;
+
+//         SET @FinalUserGuid = @UserGuid;
+//     END
+//     ELSE
+//     BEGIN
+//         SET @FinalUserGuid = NEWID();
+
+//         INSERT INTO Users (UserGuid, UserName, PasswordHash, IsActive)
+//         VALUES (@FinalUserGuid, @UserName, @PasswordHash, 1);
+//     END
+
+//     IF EXISTS (SELECT 1 FROM UserRoleMapping WHERE UserGuid = @FinalUserGuid)
+//         UPDATE UserRoleMapping SET RoleGuid = @RoleGuid WHERE UserGuid = @FinalUserGuid;
+//     ELSE
+//         INSERT INTO UserRoleMapping (UserGuid, RoleGuid)
+//         VALUES (@FinalUserGuid, @RoleGuid);
+// END;
+
+
 
